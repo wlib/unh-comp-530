@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+  <title>Assembly ⇄ µcode</title>
+</head>
+
+<body>
+  <form id="assembler">
+    <fieldset id="controls-container">
+      <legend>Controls</legend>
+      <a id="open-in-interpreter" target="_blank">Open in interpreter</a>
+      <button type="submit" name="save">Save</button>
+    </fieldset>
+
+    <fieldset id="assembly-container">
+      <legend>Assembly</legend>
+      <textarea name="assembly"></textarea>
+    </fieldset>
+
+    <fieldset id="memory-container">
+      <legend>Memory</legend>
+      <label>
+        Binary:
+        <textarea name="binary" placeholder="00000000" cols="8" rows="16"></textarea>
+      </label>
+      <label>
+        Hexadecimal:
+        <textarea name="hex" placeholder="00" cols="2" rows="16"></textarea>
+      </label>
+    </fieldset>
+  </form>
+
+  <script type="module">
+    import Memory from "./memory.mjs"
+    import { assemble, disassemble } from "./assemble.mjs"
+
+    const form = document.forms.assembler
+    const openInInterpreter = form.querySelector("a#open-in-interpreter")
+
+    const render = (assembly, memory) => {
+      form.elements.assembly.value = assembly
+      form.elements.binary.value   = memory.toString({ base: 2 })
+      form.elements.hex.value      = memory.toString({ base: 16 })
+
+      const interpreterUrl = new URL("/interpret-microcode", location.href)
+      interpreterUrl.searchParams.set("memory", memory.toString({ base64url: true }))
+      openInInterpreter.href = interpreterUrl.href
+    }
+
+    {
+      const searchParams = new URLSearchParams(location.search)
+
+      if (searchParams.has("assembly")) {
+        const assembly = searchParams.get("assembly")
+        try {
+          const memory = assemble(assembly)
+          render(assembly, memory)
+        } catch(e) {
+          alert(e)
+        }
+      }
+      else if (searchParams.has("memory")) {
+        const memory = Memory.fromString(searchParams.get("memory"), { base64url: true })
+        render(disassemble(memory), memory)
+      }
+    }
+    form.elements.save.addEventListener("click", e => {
+      e.preventDefault()
+      const searchParams = new URLSearchParams()
+
+      searchParams.set("assembly", form.elements.assembly.value)
+
+      const url = new URL(location.href)
+      url.search = searchParams.toString()
+      open(url)
+    })
+
+    form.elements.assembly.addEventListener("change", () => {
+      const assembly = form.elements.assembly.value
+      try {
+        const memory = assemble(assembly)
+        render(assembly, memory)
+      } catch(e) {
+        alert(e)
+      }
+    })
+    form.elements.binary.addEventListener("change", () => {
+      const memory = Memory.fromString(form.elements.binary.value, { base: 2 })
+      render(disassemble(memory), memory)
+    })
+    form.elements.hex.addEventListener("change", () => {
+      const memory = Memory.fromString(form.elements.hex.value, { base: 16 })
+      render(disassemble(memory), memory)
+    })
+  </script>
+
+  <style>
+    :root {
+      font-family: ui-monospace, Menlo, monospace;
+    }
+
+    *, ::before, ::after {
+      box-sizing: border-box;
+      color: inherit;
+      font-family: inherit;
+      overflow-wrap: break-word;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+    }
+
+    form {
+      display: grid;
+      gap: 1rem;
+      place-self: center;
+    }
+
+    fieldset {
+      display: flex;
+      gap: 1rem;
+    }
+
+    legend {
+      font-size: 1.2rem;
+      font-weight: 500;
+      font-variant: all-small-caps;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input, output, textarea {
+      font: inherit;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border: thin solid black;
+      border-radius: 0.2rem;
+    }
+
+    form#assembler {
+      grid-template:
+        "controls controls"
+        "assembly memory"
+        "assembly memory";
+    }
+
+    #controls-container {
+      grid-area: controls;
+    }
+
+    #assembly-container {
+      grid-area: assembly;
+    }
+
+    #memory-container {
+      grid-area: memory;
+    }
+  </style>
+  </style>
+</body>
+</html>

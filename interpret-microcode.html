@@ -1,0 +1,227 @@
+<!doctype html>
+<html>
+<head>
+  <title>Interpret µcode</title>
+</head>
+
+<body>
+  <form id="interpreter">
+    <fieldset id="execution">
+      <legend>Execution</legend>
+      <button type="button" name="step">Step</button>
+      <button type="button" name="run">Run</button>
+      <button type="submit" name="save">Save</button>
+      <label>
+        Program Counter:
+        <input name="programCounter" placeholder="0">
+      </label>
+    </fieldset>
+
+    <fieldset id="registers">
+      <legend>Registers</legend>
+      <label>
+        R0:
+        <input name="r0" placeholder="0000000000000000" size="16" maxlength="16">
+      </label>
+      <label>
+        R1:
+        <input name="r1" placeholder="0000000000000000" size="16" maxlength="16">
+      </label>
+      <label>
+        R2:
+        <input name="r2" placeholder="0000000000000000" size="16" maxlength="16">
+      </label>
+    </fieldset>
+
+    <fieldset id="instruction">
+      <legend>Instruction</legend>
+      <label>
+        Code:
+        <input name="instr" placeholder="0000" size="4" maxlength="4">
+      </label>
+      <label>
+        Register:
+        <input name="reg" placeholder="00" size="2" maxlength="2">
+      </label>
+      <label>
+        Mode:
+        <input name="addr" placeholder="00" size="2" maxlength="2">
+      </label>
+    </fieldset>
+
+    <fieldset id="memory">
+      <legend>Memory</legend>
+      <label>
+        Binary:
+        <textarea name="binary" placeholder="00000000" cols="8" rows="16"></textarea>
+      </label>
+      <label>
+        Hexadecimal:
+        <textarea name="hex" placeholder="00" cols="2" rows="16"></textarea>
+      </label>
+    </fieldset>
+  </form>
+
+  <script type="module">
+    import Memory from "./memory.mjs"
+    import { Machine } from "./interpret-microcode.mjs"
+
+    const form = document.forms.interpreter
+    const machine = new Machine()
+
+    {
+      const searchParams = new URLSearchParams(location.search)
+
+      machine.programCounter = parseInt(searchParams.get("programCounter") ?? 0)
+      machine.registers["00"] = parseInt(searchParams.get("r0") ?? 0)
+      machine.registers["01"] = parseInt(searchParams.get("r1") ?? 0)
+      machine.registers["10"] = parseInt(searchParams.get("r2") ?? 0)
+
+      if (searchParams.has("memory"))
+        machine.memory = Memory.fromString(searchParams.get("memory"), { base64url: true })
+    }
+    form.elements.save.addEventListener("click", e => {
+      e.preventDefault()
+      const searchParams = new URLSearchParams()
+
+      searchParams.set("programCounter", machine.programCounter)
+      searchParams.set("r0", machine.registers["00"])
+      searchParams.set("r1", machine.registers["01"])
+      searchParams.set("r2", machine.registers["10"])
+      searchParams.set("memory", machine.memory.toString({ base64url: true }))
+
+      const url = new URL(location.href)
+      url.search = searchParams.toString()
+      open(url)
+    })
+
+    const render = () => {
+      form.elements.programCounter.value = machine.programCounter
+      form.elements.r0.value = machine.registers["00"]
+      form.elements.r1.value = machine.registers["01"]
+      form.elements.r2.value = machine.registers["10"]
+      form.elements.binary.value = machine.memory.toString({ base: 2 })
+      form.elements.hex.value    = machine.memory.toString({ base: 16 })
+    }
+    render()
+
+    form.elements.binary.addEventListener("change", () => {
+      machine.memory = Memory.fromString(form.elements.binary.value, { base: 2 })
+      render()
+    })
+    form.elements.hex.addEventListener("change", () => {
+      machine.memory = Memory.fromString(form.elements.hex.value, { base: 16 })
+      render()
+    })
+
+    form.elements.programCounter.addEventListener("change", () => {
+      machine.programCounter = form.elements.programCounter.value
+    })
+
+    form.elements.step.addEventListener("click", () => {
+      try {
+        machine.step()
+        render()
+      }
+      catch (thrown) {
+        alert(thrown)
+      }
+    })
+  </script>
+
+  <style>
+    :root {
+      font-family: ui-monospace, Menlo, monospace;
+    }
+
+    *, ::before, ::after {
+      box-sizing: border-box;
+      color: inherit;
+      font-family: inherit;
+      overflow-wrap: break-word;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+    }
+
+    form {
+      display: grid;
+      gap: 1rem;
+      place-self: center;
+    }
+
+    fieldset {
+      display: flex;
+      gap: 1rem;
+    }
+
+    legend {
+      font-size: 1.2rem;
+      font-weight: 500;
+      font-variant: all-small-caps;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input, output, textarea {
+      font: inherit;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border: thin solid black;
+      border-radius: 0.2rem;
+    }
+
+    form#interpreter {
+      grid-template:
+        "execution   memory"
+        "registers   memory"
+        "instruction memory";
+    }
+
+    #execution {
+      grid-area: execution;
+      display: grid;
+      grid-template:
+        "step    run"
+        "counter counter";
+    }
+
+    [name="step"] {
+      grid-area: step;
+    }
+
+    [name="run"] {
+      grid-area: run;
+    }
+
+    #execution > label {
+      grid-area: counter;
+    }
+
+    #registers {
+      grid-area: registers;
+      flex-direction: column;
+    }
+
+    #registers > label {
+      flex-direction: row;
+      align-items: center;
+    }
+
+    #instruction {
+      grid-area: instruction;
+    }
+
+    #memory {
+      grid-area: memory;
+    }
+  </style>
+  </style>
+</body>
+</html>

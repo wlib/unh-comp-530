@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <title>Converter Bases</title>
+</head>
+
+<body>
+  <form>
+    <fieldset id="input-fields">
+      <legend>Input</legend>
+      <label>
+        Base:
+        <select>
+          <option value="2">Binary</option>
+          <option value="10" selected>Decimal</option>
+          <option value="16">Hexadecimal</option>
+        </select>
+      </label>
+      <input placeholder="0">
+    </fieldset>
+
+    <fieldset id="output-fields">
+      <legend>Output</legend>
+      <label>
+        Base:
+        <select>
+          <option value="2">Binary</option>
+          <option value="10">Decimal</option>
+          <option value="16">Hexadecimal</option>
+        </select>
+      </label>
+      <output></output>
+    </fieldset>
+  </form>
+
+  <script type="module">
+    import { convertBases } from "./convert-bases.mjs"
+
+    const form       = document.querySelector("form")
+    const input      = document.querySelector("#input-fields input")
+    const inputBase  = document.querySelector("#input-fields select")
+    const output     = document.querySelector("#output-fields output")
+    const outputBase = document.querySelector("#output-fields select")
+
+    const render = () => {
+      // make the input base disabled in the output base selector
+      for (const option of outputBase.options) {
+        if (option.value === inputBase.value) {
+          option.hidden   =
+          option.disabled = true
+          option.selected = false
+        }
+        // revert any previously disabled options
+        else {
+          option.hidden   =
+          option.disabled = false
+        }
+      }
+      // calculate and display the result
+      output.value = convertBases(inputBase.value, outputBase.value, input.value)
+    }
+
+    // kickoff
+    render()
+
+    // render every input
+    input.addEventListener("input", render)
+    // changing the bases will force re-renders
+    outputBase.addEventListener("change", render)
+    inputBase.addEventListener("change", render)
+    // whenever the form submits (enter key)
+    form.addEventListener("submit", e => {
+      // don't actually make an HTTP call, though
+      e.preventDefault()
+      render()
+    })
+  </script>
+
+  <style>
+    :root {
+      font-family: system-ui;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+    }
+
+    form {
+      display: grid;
+      gap: 1rem;
+      place-self: center;
+    }
+
+    fieldset {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    legend {
+      font-size: 1.2rem;
+      font-weight: 500;
+      font-variant: all-small-caps;
+    }
+
+    input, output {
+      font: inherit;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border: thin solid black;
+      border-radius: 0.2rem;
+    }
+  </style>
+</body>
+</html>
