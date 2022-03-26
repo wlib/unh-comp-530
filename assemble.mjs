@@ -32,7 +32,7 @@ export const assemble = code =>
     parseAssembly(code)
       .map(instruction => {
         if (instruction.instruction === constants.instructions.memory)
-          return instruction.value.toString(2).padStart(8, "0")
+          return instruction.value.toString(2).padStart(16, "0")
 
         const binaryInstruction =
           symbolToBinary[instruction.instruction]              +

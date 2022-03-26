@@ -77,8 +77,10 @@
       machine.registers["01"] = parseInt(searchParams.get("r1") ?? 0)
       machine.registers["10"] = parseInt(searchParams.get("r2") ?? 0)
 
-      if (searchParams.has("memory"))
+      if (searchParams.has("memory")) {
         machine.memory = Memory.fromString(searchParams.get("memory"), { base64url: true })
+        machine.fetch()
+      }
     }
     form.elements.save.addEventListener("click", e => {
       e.preventDefault()
@@ -100,6 +102,9 @@
       form.elements.r0.value = machine.registers["00"]
       form.elements.r1.value = machine.registers["01"]
       form.elements.r2.value = machine.registers["10"]
+      form.elements.instr.value = machine.instr
+      form.elements.reg.value   = machine.reg
+      form.elements.addr.value  = machine.addr
       form.elements.binary.value = machine.memory.toString({ base: 2 })
       form.elements.hex.value    = machine.memory.toString({ base: 16 })
     }
@@ -107,15 +112,26 @@
 
     form.elements.binary.addEventListener("change", () => {
       machine.memory = Memory.fromString(form.elements.binary.value, { base: 2 })
+      machine.fetch()
       render()
     })
     form.elements.hex.addEventListener("change", () => {
       machine.memory = Memory.fromString(form.elements.hex.value, { base: 16 })
+      machine.fetch()
       render()
     })
 
     form.elements.programCounter.addEventListener("change", () => {
       machine.programCounter = form.elements.programCounter.value
+    })
+    form.elements.r0.addEventListener("change", () => {
+      machine.registers["00"] = form.elements.r0.value
+    })
+    form.elements.r1.addEventListener("change", () => {
+      machine.registers["01"] = form.elements.r1.value
+    })
+    form.elements.r2.addEventListener("change", () => {
+      machine.registers["10"] = form.elements.r2.value
     })
 
     form.elements.step.addEventListener("click", () => {

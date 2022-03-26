@@ -239,15 +239,20 @@ export default input => {
     }
     else {
       const previous = instructions[i - 1]
-      const previousSize =
-        (
-          previous.instruction === constants.instructions.memory ||
-          previous.instruction === constants.instructions.noOperation ||
-          previous.instruction === constants.instructions.halt ||
-          previous.instruction === constants.instructions.not
-        )
-          ? 1
-          : 3
+
+      let previousSize
+      if (
+        previous.instruction === constants.instructions.noOperation ||
+        previous.instruction === constants.instructions.halt ||
+        previous.instruction === constants.instructions.not
+      )
+        previousSize = 1
+      else if (
+        previous.instruction === constants.instructions.memory
+      )
+        previousSize = 2
+      else
+        previousSize = 3
 
       current.address = previous.address + previousSize
     }
@@ -259,7 +264,7 @@ export default input => {
 
   instructions.forEach(({ argument }) => {
     if (argument?.label) {
-      argument.mode = constants.addressingModes.immediate
+      argument.mode = constants.addressingModes.direct
       argument.value = labelToAddress[argument.label]
     }
   })
